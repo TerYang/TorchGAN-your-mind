@@ -12,15 +12,19 @@ from tensorboardX import SummaryWriter
 # from graphviz import Digraph
 
 # Hyper parameters
+train_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/train/"
+test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
 
+train_normal = train_addr + 'copy_normal.txt'
+train_anormal = train_addr + 'copy_anormal.txt'
 BATCH_SIZE = 64     # train batch size
-EPOCH = 200        # iteration of all datasets
+EPOCH = 5       # iteration of all datasets
 LR_G = 0.0001           # learning rate for generator
 LR_D = 0.0001
 # GPU_NUM = 2
 
 # train_nor_data, train_abnor_data = get_data()
-num_nor, num_anor, train_all = get_data()
+num_nor, num_anor, train_all = get_data(train_normal,train_anormal,num=64*10000)
 zeros_label = np.zeros(num_nor) #Label 0 means normal,size 1*BATCH
 # zeros = zeros_label.T
 ones_label = np.ones(num_anor) #Label 1 means anormal,size 1*BATCH
@@ -93,11 +97,10 @@ for epoch in range(EPOCH):                    # start training
         D_loss.backward()  # retain_variables for reusing computational graph
         opt_D.step()
 
-#==================#
         if step % 10 == 0:
             print('Epoch: ', epoch, '| train loss: %.4f' % D_loss.item())
 
-    if (epoch+1)%50 == 0:
+    if (epoch+1)%5 == 0:
         torch.save(D_net, SAVE_NET_PATH)
 
 # save Net

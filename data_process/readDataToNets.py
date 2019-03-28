@@ -8,8 +8,8 @@ import multiprocessing as mp
 train_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/train/"
 test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
 
-train_normal = train_addr + 'normal.txt'
-train_anormal = train_addr + 'anormal.txt'
+train_normal = train_addr + 'copy_normal.txt'
+train_anormal = train_addr + 'copy_anormal.txt'
 
 # def job(url,q):
 #     min_bounder = 0
@@ -40,59 +40,106 @@ train_anormal = train_addr + 'anormal.txt'
 #     q.put(data1)
 
 
-def job(url,q):
-    min_bounder = 0
-    data1 = []
-    data = pd.read_csv(url, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',chunksize=64)
-    count = 0
-    for i,o1 in enumerate(data):
-        size = o1.index[-1]
-        # print(o1)
-        # exit()
-        # print("{} data number is:{} split to {} blcoks\n".format(url[60:],size,i))
-        if size < 63:
-            print(size,i)
-            count = i
-            continue
-        else:
-            if i == 0:
-                data1 = o1.values.reshape(64, 22).astype(np.float32)
-            if i != 0:
-                try:
-                    data1 = np.concatenate((data1,o1.values.reshape(64, 22).astype(np.float32)),axis=0)
-                except ValueError:
-                    print(i)
-                if i%50000==0:
-                    print('loop:{}'.format(i))
-                    print("data1 shape:{} data1 type:{}".format(data1.shape,type(data1)))
-    # data1 = np.reshape(data1,(-1,64,22))
-    q.put(data1)
+# def job(url,q):
+#     min_bounder = 0
+#     data1 = []
+#     data = pd.read_csv(url, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',chunksize=64)
+#     # print(url)
+#     # exit()
+#     name = url[-12:]
+#     for i,o1 in enumerate(data):
+#         size = o1.index[-1]
+#         # print(o1)
+#         # exit()
+#         # print("{} data number is:{} split to {} blcoks\n".format(url[60:],size,i))
+#         if size < 63:
+#             print(size,i)
+#             count = i
+#             continue
+#         else:
+#             if i == 0:
+#                 data1 = o1.values.reshape(64, 22).astype(np.float32)
+#             if i != 0:
+#                 try:
+#                     data1 = np.concatenate((data1,o1.values.reshape(64, 22).astype(np.float32)),axis=0)
+#                 except ValueError:
+#                     print("file name:{},loop:{} {}".format(name,i,'-'*50))
+#                 if i%500==0:
+#                     print('loop:{}'.format(i))
+#                     print("data1 shape:{} data1 type:{}".format(data1.shape,type(data1)))
+#     # data1 = np.reshape(data1,(-1,64,22))
+#     q.put(data1)
 
 
-def get_data():
+
+# def job(url,q):
+#     min_bounder = 0
+#     # data1 = []
+#     data = pd.read_csv(url, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=640000)
+#     # print(url)
+#     # exit()
+#     # name = url[-12:]
+#     # for i,o1 in enumerate(data):
+#     #     size = o1.index[-1]
+#     #     # print(o1)
+#     #     # exit()
+#     #     # print("{} data number is:{} split to {} blcoks\n".format(url[60:],size,i))
+#     #     if size < 63:
+#     #         print(size,i)
+#     #         count = i
+#     #         continue
+#     #     else:
+#     #         if i == 0:
+#     #             data1 = o1.values.reshape(64, 22).astype(np.float32)
+#     #         if i != 0:
+#     #             try:
+#     #                 data1 = np.concatenate((data1,o1.values.reshape(64, 22).astype(np.float32)),axis=0)
+#     #             except ValueError:
+#     #                 print("file name:{},loop:{} {}".format(name,i,'-'*50))
+#     #             if i%500==0:
+#     #                 print('loop:{}'.format(i))
+#     #                 print("data1 shape:{} data1 type:{}".format(data1.shape,type(data1)))
+#     # data1 = np.reshape(data1,(-1,64,22))
+#     data1 = data.values.astype(np.float32)
+#     print('had read file____________________')
+#     # return data1
+#     q.put(data1)
+
+
+def get_data(train_normal,train_anormal,num=64*10000):
+
+
+    data1 = pd.read_csv(train_normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
+    normal_data = data1.values.astype(np.float32)#
+    data2 = pd.read_csv(train_anormal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
+    anormal_data = data2.values.astype(np.float32)#,copy=True
+
     # normal_data = []
     # anormal_data = []
 
     # train_addrs = os.listdir(train_addr)
 
-    q_a = Queue()
-    q_n = Queue()
+    # q_a = mp.Queue()
+    # q_n = mp.Queue()
+    # q_a = []
+    # q_n = []
 
-    # t1 = td.Thread(target=job,args=(train_normal,q_n,),name='normal')
-    p1 = mp.Process(target=job,args=(train_normal,q_a,))
-    print('start:{}'.format(train_normal[60:]))
-
-    # t2 = td.Thread(target=job,args=(train_anormal,q_a,),name='anormal')
-    p2 = mp.Process(target=job,args=(train_anormal,q_n,))
-    print('start:{}'.format(train_anormal[60:]))
-
-    p1.start()
-    p2.start()
-    p1.join()
-    p2.join()
-
-    anormal_data = q_a.get()
-    normal_data = q_n.get()
+    # # t1 = td.Thread(target=job,args=(train_normal,q_n,),name='normal')
+    # p1 = mp.Process(target=job,args=(train_normal,q_a,))
+    # print('start:{}'.format(train_normal[60:]))
+    #
+    # # t2 = td.Thread(target=job,args=(train_anormal,q_a,),name='anormal')
+    # p2 = mp.Process(target=job,args=(train_anormal,q_n,))
+    # print('start:{}'.format(train_anormal[60:]))
+    #
+    # p1.start()
+    # p2.start()
+    # p1.join()
+    # p2.join()
+    # print("back\n")
+    # anormal_data = q_a.get()
+    # print("back\n")
+    # normal_data = q_n.get()
     print('anormal_data :ndim:{} dtype:{} shape:{}'.format(normal_data.ndim,normal_data.dtype,normal_data.shape))
 
     print('finished:{}'.format(train_normal[60:]))
@@ -100,10 +147,12 @@ def get_data():
     print('finished:{}'.format(train_anormal[60:]))
     num_anor = int(anormal_data.shape[0]/64)
     num_nor =  int(normal_data.shape[0]/64)
-    # print(num_anor,num_nor)
+
+    print(num_anor,num_nor)
+
     data = np.concatenate((normal_data,anormal_data),axis=0)
     data = np.reshape(data,(-1,64,22))
     print('data :ndim:{} dtype:{} shape:{}'.format(data.ndim, data.dtype, data.shape))
     return num_nor,num_anor,data.astype(np.float32)
 
-get_data()
+# get_data()
