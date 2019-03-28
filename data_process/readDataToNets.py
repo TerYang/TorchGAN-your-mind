@@ -102,12 +102,12 @@ source_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/
 #     # return data1
 #     q.put(data1)
 
-def get_data(keyword=None):#train_normal,train_anormal,,num=64*10000
-    if keyword == None:
-        print('Error at get_data()!')
+def get_data(keyword='test'):#train_normal,train_anormal,,num=64*10000
 
     normal = source_addr + keyword +'/' + keyword+'_normal.txt'
     anomaly = source_addr +  keyword +'/' + keyword+'_anormal.txt'
+    # print(normal)
+    # exit()
     # data1 = pd.read_csv(train_normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
     data1 = pd.read_csv(normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8')
     normal_data = data1.values.astype(np.float32)#
@@ -157,4 +157,4 @@ def get_data(keyword=None):#train_normal,train_anormal,,num=64*10000
     print('data :ndim:{} dtype:{} shape:{}'.format(data.ndim, data.dtype, data.shape))
     return num_nor,num_anor,data.astype(np.float32)
 
-# get_data()
+get_data()
