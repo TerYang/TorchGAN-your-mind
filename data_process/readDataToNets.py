@@ -5,11 +5,8 @@ import threading as td
 from queue import Queue
 import multiprocessing as mp
 
-train_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/train/"
-test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
-
-train_normal = train_addr + 'copy_normal.txt'
-train_anormal = train_addr + 'copy_anormal.txt'
+source_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/"
+# test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/test/"
 
 # def job(url,q):
 #     min_bounder = 0
@@ -105,13 +102,18 @@ train_anormal = train_addr + 'copy_anormal.txt'
 #     # return data1
 #     q.put(data1)
 
+def get_data(keyword=None):#train_normal,train_anormal,,num=64*10000
+    if keyword == None:
+        print('Error at get_data()!')
 
-def get_data(train_normal,train_anormal,num=64*10000):
-
-
-    data1 = pd.read_csv(train_normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
+    normal = source_addr + keyword +'/' + keyword+'_normal.txt'
+    anomaly = source_addr +  keyword +'/' + keyword+'_anormal.txt'
+    # data1 = pd.read_csv(train_normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
+    data1 = pd.read_csv(normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8')
     normal_data = data1.values.astype(np.float32)#
-    data2 = pd.read_csv(train_anormal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
+
+    # data2 = pd.read_csv(train_anormal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
+    data2 = pd.read_csv(anomaly, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8')
     anormal_data = data2.values.astype(np.float32)#,copy=True
 
     # normal_data = []
@@ -142,9 +144,9 @@ def get_data(train_normal,train_anormal,num=64*10000):
     # normal_data = q_n.get()
     print('anormal_data :ndim:{} dtype:{} shape:{}'.format(normal_data.ndim,normal_data.dtype,normal_data.shape))
 
-    print('finished:{}'.format(train_normal[60:]))
+    print('finished:{}'.format(normal[60:]))
     print('anormal_data :ndim:{} dtype:{} shape:{}'.format(anormal_data.ndim,anormal_data.dtype,anormal_data.shape))
-    print('finished:{}'.format(train_anormal[60:]))
+    print('finished:{}'.format(anomaly[60:]))
     num_anor = int(anormal_data.shape[0]/64)
     num_nor =  int(normal_data.shape[0]/64)
 

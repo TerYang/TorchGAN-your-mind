@@ -10,21 +10,40 @@ from Nets.GAN_net import Discriminator
 # import matplotlib.pyplot as plt
 from tensorboardX import SummaryWriter
 # from graphviz import Digraph
+import os
+import time
+SAVE_NET_PATH = './module/'   # the path to save encoder network
+
+if not os.path.exists(SAVE_NET_PATH):
+    os.makedirs(SAVE_NET_PATH)
+
+def truncted_point(loss,count = 0):
+    """#如果一个损失在15个 step 都保持在小数点后第四位数为0,训练退出"""
+
+    if int(loss*10000) == 0:
+        count += 1
+    else:
+        count = 0
+    if count ==15:
+        save_url = SAVE_NET_PATH + '{}_Epoch_{}.pkl'.format(time.strftime('%Y-%m-%d',time.localtime(time.time())),epoch)
+        torch.save(D_net, save_url)
 
 # Hyper parameters
-train_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/train/"
-test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
+# train_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/train/"
+# test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
+train_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/train/"
 
-train_normal = train_addr + 'copy_normal.txt'
-train_anormal = train_addr + 'copy_anormal.txt'
+train_normal = train_addr + 'train_normal.txt'
+train_anormal = train_addr + 'train_anormal.txt'
 BATCH_SIZE = 64     # train batch size
-EPOCH = 5       # iteration of all datasets
+EPOCH = 50      # iteration of all datasets
 LR_G = 0.0001           # learning rate for generator
 LR_D = 0.0001
 # GPU_NUM = 2
 
 # train_nor_data, train_abnor_data = get_data()
-num_nor, num_anor, train_all = get_data(train_normal,train_anormal,num=64*10000)
+num_nor, num_anor, train_all = get_data(keyword='train')#num=64*10000 train_normal,train_anormal
+
 zeros_label = np.zeros(num_nor) #Label 0 means normal,size 1*BATCH
 # zeros = zeros_label.T
 ones_label = np.ones(num_anor) #Label 1 means anormal,size 1*BATCH
@@ -55,7 +74,6 @@ print('shape a:',train_all_label.shape,type(train_all_label),'\t',train_all_labe
 # exit()
 print(np.shape(train_all), np.shape(train_all_label))
 
-SAVE_NET_PATH = './GAN_G_20190327.pkl'   # the path to save encoder network
 # SAVE_NET_PATH_G = '/root/NN_saved/GAN_G_20190327.pkl'   # the path to save encoder network
 # SAVE_NET_PATH_D = '/root/NN_saved/GAN_D_20190327.pkl'   # the path to save encoder network
 
@@ -80,8 +98,8 @@ writer = SummaryWriter()
 #=======!!!! change for  GPU speed!!! =======#
 
 
-G_lossarray = [] # save loss
-G_lossreal_array = []
+# G_lossarray = [] # save loss
+# G_lossreal_array = []
 X = 0
 for epoch in range(EPOCH):                    # start training
     for step, (T,L) in enumerate(train_loader):
@@ -101,7 +119,8 @@ for epoch in range(EPOCH):                    # start training
             print('Epoch: ', epoch, '| train loss: %.4f' % D_loss.item())
 
     if (epoch+1)%5 == 0:
-        torch.save(D_net, SAVE_NET_PATH)
+        save_url = SAVE_NET_PATH + '{}_Epoch_{}.pkl'.format(time.strftime('%Y-%m-%d',time.localtime(time.time())),epoch)
+        torch.save(D_net, save_url)
 
 # save Net
 torch.save(D_net, SAVE_NET_PATH)  # save generator NET

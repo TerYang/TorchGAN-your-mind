@@ -1,23 +1,26 @@
 # test the generator network
-
 import os
 import numpy as np
 import torch
+import time
 import scipy.io as scio
 import matplotlib.pyplot as plt
 from torch.autograd import Variable
 # from net_model.autoencoder import AutoEncoder
 from Nets.GAN_net import Discriminator
 from data_process.readDataToNets import get_data
+Net_PATH = '../Nets/module/2019-03-28_Epoch_29.pkl'
 
-test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
+# test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/merge_data/test/"
+test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/test/"
+t1 = time.time()
 
-test_normal = test_addr + 'normal.txt'
-test_anormal = test_addr + 'anormal.txt'
+test_normal = test_addr + 'test_normal.txt'
+test_anormal = test_addr + 'test_anormal.txt'
 
-
+# rows = 1
 # PATH = 'dataset/QT_data/QT_add_klg_train400_4channel/'
-Net_PATH = '../Nets/GAN_G_20190327.pkl'
+
 # Net_PATH = 'dataset/net_checkpoint_new/length400/'
 # Predictions = 'dataset/predictions_new_QT/add_klg_length400_3channel_02_AE_deeper_MSE_3000_lr001/'
 # GPU_NUM = 0
@@ -33,21 +36,13 @@ Net_PATH = '../Nets/GAN_G_20190327.pkl'
 # # Train_label = np.expand_dims(Train_label, axis=1)
 # Train_data = Variable(torch.from_numpy(Train).float())
 # Train_label = Variable(torch.from_numpy(Train_label).float())
-t_nor, t_anor, test = get_data(test_normal,test_anormal,num=64*1000)
+t_nor, t_anor, test = get_data(keyword='test')#,num=64*rows test_normal,test_anormal
+print("normal size:{},anomaly size:{}".format(t_nor,t_anor))
 
-zeros_label = np.zeros(t_nor) #Label 0 means normal,size 1*BATCH
+# zeros_label = np.zeros(t_nor) #Label 0 means normal,size 1*BATCH
 # zeros = zeros_label.T
-ones_label = np.ones(t_anor) #Label 1 means anormal,size 1*BATCH
+# ones_label = np.ones(t_anor) #Label 1 means anormal,size 1*BATCH
 test = np.expand_dims(test, axis=1)
-# print(test.shape)
-# exit()
-# Test = Test['train']
-# # Test = np.expand_dims(Test, axis=1)
-# # for i in range(11760):
-# #     for j in range(400):
-# #         Test[i, 2, j] = Test[i, 2, j] * 0.1
-# Label = Label['label']
-# Label = np.expand_dims(Label, axis=1)
 
 Test_data = Variable(torch.from_numpy(test).float())
 # Test_label = Variable(torch.from_numpy(Label).float())
@@ -55,10 +50,6 @@ Test_data = Variable(torch.from_numpy(test).float())
 Dnet = Discriminator()#.cuda(GPU_NUM)
 # Dnet.load_state_dict(torch.load(Net_PATH))
 Dnet = torch.load(Net_PATH)
-# Gnet.load_state_dict(torch.load(Net_PATH + 'G_400_200.pth'))
-
-# T = Test_data[:1000]
-# T = Train_data[:100]
 
 #################################
 T = Test_data
@@ -66,16 +57,27 @@ print(np.shape(T))
 Results = Dnet(T)
 Results = Results.data.numpy()
 print(np.shape(Results))
-print(Results[988:1100,0])
+# print(Results[988:1100,0])
+failure_rate = 0#真当假
+false_positive = 0#假当正
 crect = 0
-for i in range(1000):
+
+for i in range(t_nor):
     if Results[i,0] < 0.5:
         crect = crect + 1
-for i in range(1000):
-    if Results[i+1000,0] >= 0.5:
+    else:
+        failure_rate += 1
+for i in range(t_anor):
+    if Results[i+t_nor,0] >= 0.5:
         crect = crect + 1
+    else:
+        false_positive += 1
 
-print("crrect number: {}".format(crect))
+t2 = time.time()
+print('time test spent :',t2-t1)
+print("crect number: {},total Accuracy rate:{}".format(crect,crect/(t_nor+t_anor)))
+print('false detected rate respectively,normal:{},anomaly:{}'.format(failure_rate/t_nor,false_positive/t_anor))
+
 # generate the segment data for filtering step
 # results = np.random.randn(1,1,400)
 # for i in range(16):
