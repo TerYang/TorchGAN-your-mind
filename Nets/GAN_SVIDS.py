@@ -16,7 +16,7 @@ from Nets.GAN_net import Discriminator
 # G_OUTPUT_dim = 21     # generator output dimensions
 INPUT_dim = 22
 BATCH_SIZE = 64     # train batch size
-EPOCH = 10        # iteration of all datasets
+EPOCH = 50        # iteration of all datasets
 LR_G = 0.0001           # learning rate for generator
 LR_D = 0.0001
 LAMDA = 0.7         # PairwiseDistance leaning rate
@@ -61,7 +61,7 @@ def random_generator():
     la = scaler.fit_transform(np.random.randn(4, 1))
 
     la = torch.from_numpy(la).float()
-    la = la.expand((1, 1, 4, 1))
+    la = la.expand((1, 1 ,4, 1))
     return Variable(la)
     #################### generator input ###################
 
@@ -126,8 +126,8 @@ if __name__ == '__main__':
     # exit()
 
     print('program  start at:', time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time())))
-    num_nor, train_all = get_data()  # num=64*10000 train_normal,train_anormal
-    # num_nor, train_all = minbatch_test()  # num=64*10000 train_normal,train_anormal
+    # num_nor, train_all = get_data()  # num=64*10000 train_normal,train_anormal
+    num_nor, train_all = minbatch_test()  # num=64*10000 train_normal,train_anormal
 
     # zeros_label = np.zeros(num_anor)  # Label 0 means normal,size 1*BATCH
     # zeros = zeros_label.T
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     D_lossarray= []
     X = 0
     for epoch in range(EPOCH):                    # start training
-        if epoch == 70:
+        if epoch ==20:
             opt_G.param_groups[0]['lr'] = 0.00002
         for step, (T,L) in enumerate(train_loader):
             #=======!!!! change for  GPU speed!!! =======#
@@ -199,8 +199,6 @@ if __name__ == '__main__':
             L = Variable(L)
             # print('T.shape:',T.shape)#T.shape: torch.Size([64, 1, 64, 22])
             # print('L.shape:',L.shape)#L.shape: torch.Size([64, 1])
-
-            G_generate = G(random_generator()) # fake painting from G (random ideas)
             # G generate tensor shape of 1,64,64,22,reshape as 64,1,64,22
 
             # G_generate_permute = G_generate.permute(1,0,2,3)
@@ -214,11 +212,31 @@ if __name__ == '__main__':
             # print('G_generate_permute after:',G_generate_permute.shape)#G_generate_permute after: torch.Size([64, 1, 64, 22])
 
             D_real = D(T)           # D try to increase this prob
-            # print('D_real.shape',D_real.shape)
+            print('D_real.shape',D_real.shape)
+            input_channels =T.shape[0]
 
-            D_fake = D(G_generate)  # D try to reduce this prob
+            print(input_channels)
+            """modified start"""
+            l = 0
+            for i in range(input_channels):
+                G_generate = G(random_generator()) # fake painting from G (random ideas)
+                if i == 0:
+                    l = G_generate
+                    print('G_generate.shape',G_generate.shape)
+                else:
+                    l = torch.cat((l,G_generate))
+            print('l.shape',l.shape)
+            D_fake = D(l)  # D try to reduce this prob
+            print('D_fake.shape:',D_fake.shape)
+            # D_fake = D(G_generate)  # D try to reduce this prob
             # print('D_fake.shape',D_fake.shape)
-
+            """modified end"""
+            """
+            G_generate.shape torch.Size([1, 1, 64, 22])
+            l.shape torch.Size([64, 1, 64, 22])
+            D_fake.shape: torch.Size([64, 1])
+            D_real.shape torch.Size([64, 1])
+            """
             D_loss = -torch.mean(torch.log(D_real) + torch.log(1. - D_fake))
             D_lossarray.append(D_loss)
 
