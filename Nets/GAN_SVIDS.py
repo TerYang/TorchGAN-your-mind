@@ -21,7 +21,7 @@ from Nets.GAN_net import Discriminator
 # G_OUTPUT_dim = 21     # generator output dimensions
 INPUT_dim = 22
 BATCH_SIZE = 64     # train batch size
-EPOCH = 50        # iteration of all datasets
+EPOCH = 200        # iteration of all datasets
 LR_G = 0.0001           # learning rate for generator
 LR_D = 0.0001
 LAMDA = 0.7         # PairwiseDistance leaning rate
@@ -33,8 +33,19 @@ TEST_dim = 22
 
 loss_records = []
 
-SAVE_NET_PATH = os.path.join('./GANmodule/','{}'.format(time.strftime('%Y-%m-%d', time.localtime(time.time()))))
+current_dir = './full/{}'.format(time.strftime('%Y-%m-%d', time.localtime(time.time())))
+if not os.path.exists(current_dir):
+    os.makedirs(current_dir)
 
+os.chdir(current_dir)
+
+SAVE_NET_PATH = './GANmodule/'
+# SAVE_NET_PATH = os.path.join('./GANmodule/','{}'.format(time.strftime('%Y-%m-%d', time.localtime(time.time()))))
+
+# if os.path.exists(SAVE_NET_PATH):
+#     if not os.path.exists(SAVE_NET_PATH+'_copy'):
+#         os.makedirs(SAVE_NET_PATH+'_copy')
+#     SAVE_NET_PATH = SAVE_NET_PATH+'_copy'
 
 SAVE_NET_PATH_G = os.path.join(SAVE_NET_PATH,'G') # the path to save encoder network
 
@@ -94,24 +105,7 @@ G = nn.Sequential(                      # Generator,input 1,1,4,1,output 1,64,64
     nn.ConvTranspose2d(in_channels=4, out_channels=1, kernel_size=4, stride=2, padding=1, output_padding=0, bias=False),
     # nn.ReLU(),
     nn.Tanh(),
-)#.cuda(GPU_NUM)    #=======!!!! change for  GPU speed!!! =======#
-
-# D = nn.Sequential(                      # Discriminator
-#
-#     nn.Conv2d(1, 16, kernel_size=2, stride=1, padding=1),  # keep dims conv,shape: 64*22*1 to 64*22*64
-#     nn.ReLU(),
-#     nn.MaxPool2d(kernel_size=2),
-#     nn.Conv2d(16, 32, kernel_size=2, stride=1, padding=1),  # scale down dims conv,shape: 32*11*64 to 32*11*128
-#     nn.ReLU(),
-#     nn.MaxPool2d(kernel_size=2),
-#     nn.Conv2d(32, 64, kernel_size=2, stride=1, padding=1),  # scale down dims conv,shape: 16*6*128 to 16*6*256
-#     nn.MaxPool2d(kernel_size=2),  # cale down dims conv,shape: 16*6*256 to 8*3*256
-#     nn.ReLU(),
-#     nn.Linear(1536, 300),
-#     nn.Tanh(),
-#     nn.Linear(300, 1),# tell the probability that the art work is made by real or fake
-# )#.cuda(GPU_NUM)    #=======!!!! change for  GPU speed!!! =======#
-
+)
 
 # if __name__ == '__main__':
 """
@@ -132,8 +126,8 @@ if not os.path.exists(SAVE_NET_PATH_D):
 # exit()
 
 print('program  start at:', time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time())))
-# num_nor, train_all = get_data()  # num=64*10000 train_normal,train_anormal
-num_nor, train_all = minbatch_test()  # num=64*10000 train_normal,train_anormal
+num_nor, train_all = get_data()  # num=64*10000 train_normal,train_anormal
+# num_nor, train_all = minbatch_test()  # num=64*10000 train_normal,train_anormal
 
 # zeros_label = np.zeros(num_anor)  # Label 0 means normal,size 1*BATCH
 # zeros = zeros_label.T
@@ -170,27 +164,16 @@ loss_func = nn.MSELoss()    # loss function
 # loss_P = nn.PairwiseDistance()# the p-norm
 
 Train , TrainL, train_loader  = data_trans(train_all, train_label)     # get ready to train datasets  #Test , TestL ,
-
-writer = SummaryWriter()
+# log_dir= './runs/{}'.format(time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time())))
+# if not os._exists(log_dir):
+#     os.makedirs(log_dir)
+writer = SummaryWriter()#log_dir=log_dir,
 # logger = Logger('./logger_logs') # set the logger
 # testLoss = np.random.randn(int(len(Test)/TEST_dim)) #save loss
 
 #=======!!!! change for  GPU speed!!! =======#
 ones_label = Variable(torch.ones(BATCH_SIZE))  #Label 1 means real,size 1*BATCH
 zeros_label = Variable(torch.zeros(BATCH_SIZE)) #Label 0 means fake,size 1*BATCH
-# D_label = torch.cat((zeros_label, ones_label), ).type(torch.LongTensor)
-
-#!!!!!!!! plot data block!!!!!!!!!#
-# plt.figure()    # plot data wave
-# plt.ion()       # coutinously
-#
-# view_noisedata = Test.data.numpy()[:30].reshape((1,3000))     # prepare data to plot
-# view_Labeldata = TestL.data.numpy()[:30].reshape((1,3000))
-#
-# ax1 = plt.subplot2grid((3,1),(0,0))         # plot noise data
-# ax3 = plt.subplot2grid((3,1),(2,0))         # plot original data
-# ax1.plot(view_noisedata[0])
-# ax3.plot(view_Labeldata[0])
 
 G_lossarray = [] # save loss
 D_lossarray= []
@@ -252,6 +235,7 @@ for epoch in range(EPOCH):                    # start training
         # D_loss.backward()  # retain_variables for reusing computational graph
         opt_D.step()
 
+
         G_loss_D = torch.mean(torch.log(1. - D_fake))#1越大越
         # print('D_loss:',G_loss_D.item())
 
@@ -261,40 +245,32 @@ for epoch in range(EPOCH):                    # start training
         opt_G.step()
 
         ###################### loss append to list #######################
-        # print('GLoss',type(G_loss_D.data),G_loss_D.data)
-        # print('DLoss',type(D_loss.data),D_loss.data)
-
         G_lossarray.append(G_loss_D.item())
         D_lossarray.append(D_loss.item())
 
         #####################################################################
 
         if step % 50 == 0:
-            # autoencoder.eval()      # turn off dropout function ,prediction
-            # print test results (test loss)
-            # Gtest_data = G(Test)  #.cuda(GPU_NUM)=======!!!! change for  GPU speed!!! =======#
-            # calculate the RMSE
-            # Temp = (Gtest_data.data.numpy() - TestL.data.numpy()) ** 2
-            # for n in range(int(len(Gtest_data)/TEST_dim)):
-            #     # print('Temp shape :',np.shape(Temp))
-            #     testLoss[n] = np.sqrt(np.mean(Temp[n*TEST_dim:(n+1)*TEST_dim])) # RMSE
-
             loss_records.append(G_loss_D.item())
             loss_records.append(D_loss.item())
 
-            print('Epoch: ', epoch, '|Gloss: %.6f' % (-G_loss_D.item()),'|train Dloss: %.6f'%D_loss.item())#MSE LOSS : %.6f' % G_loss_real.item(),
+            print('Epoch: ', epoch, '|Gloss: %.6f' % (-G_loss_D.item()),'|train Dloss: %.6f'%D_loss.item())
+            scalar_dir = './scalar'
 
-            # G_lossarray.append(G_loss.data[0])
-            # G_lossreal_array.append(G_loss_real.data[0])
-            # writer.add_scalar('G_loss', G_loss.data[0], X)
-            # writer.add_scalar('D_loss', D_loss.data[0], X)
-            # X = X + 1#################################################################################################################################################################
+            writer.add_scalar('G_loss', -G_loss_D.item(), X)
+            writer.add_scalar('D_loss', D_loss.item(), X)
+            writer.add_scalars('cross loss',{'G_loss':-G_loss_D.item(),
+                                            'D_loss':D_loss.item()},X)
+            X = X + 1
+
     if epoch %5== 0:
          url_G = SAVE_NET_PATH_G + '/Epoch_{}.pkl'.format(epoch)
          url_D = SAVE_NET_PATH_D + '/Epoch_{}.pkl'.format(epoch)
          torch.save(G, url_G)
          torch.save(D, url_D)
 
+# writer.add_graph(G)
+# writer.add_graph(D)
 # save Net
 Net_G_url = SAVE_NET_PATH_G +'/Net_G.pkl'
 Net_D_url = SAVE_NET_PATH_D +'/Net_D.pkl'
@@ -307,3 +283,5 @@ np.savetxt(SAVE_NET_PATH +'/loss.txt',np.array(loss_records).reshape((-1,2)),fmt
 np.savetxt(SAVE_NET_PATH_D +'/loss.txt',np.array(D_lossarray),fmt='%.6f',delimiter=',')
 np.savetxt(SAVE_NET_PATH_G +'/loss.txt',np.array(G_lossarray),fmt='%.6f',delimiter=',')
 print('program  end at:', time.strftime('%Y-%m-%d,%H:%M:%S', time.localtime(time.time())))
+
+writer.export_scalars_to_json('./scalar/allScalar.json')
