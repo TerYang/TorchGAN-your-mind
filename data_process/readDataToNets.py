@@ -5,7 +5,8 @@ import threading as td
 from queue import Queue
 import multiprocessing as mp
 
-source_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/"
+# source_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/"
+source_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/instrusion-dataset/Batch_delNone_toNumpy/second_merge/"
 # test_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/second_merge/test/"
 
 # def job(url,q):
@@ -102,10 +103,10 @@ source_addr = "/home/gjj/PycharmProjects/ADA/ID-TIME_data/Batch_delNone_toNumpy/
 #     # return data1
 #     q.put(data1)
 
-def get_data(keyword='test'):#train_normal,train_anormal,,num=64*10000
+def get_data(keyword='train'):#train_normal,train_anormal,,num=64*10000
 
-    normal = source_addr + keyword +'/' + keyword+'_normal.txt'
-    anomaly = source_addr +  keyword +'/' + keyword+'_anormal.txt'
+    normal = source_addr + keyword + '/' + keyword+'_normal.txt'
+    anomaly = source_addr +  keyword + '/' + keyword+'_anormal.txt'
     # print(normal)
     # exit()
     # data1 = pd.read_csv(train_normal, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8',nrows=num)
@@ -116,32 +117,6 @@ def get_data(keyword='test'):#train_normal,train_anormal,,num=64*10000
     data2 = pd.read_csv(anomaly, sep=None, header=None,dtype=np.str, engine='python',encoding='utf-8')
     anormal_data = data2.values.astype(np.float32)#,copy=True
 
-    # normal_data = []
-    # anormal_data = []
-
-    # train_addrs = os.listdir(train_addr)
-
-    # q_a = mp.Queue()
-    # q_n = mp.Queue()
-    # q_a = []
-    # q_n = []
-
-    # # t1 = td.Thread(target=job,args=(train_normal,q_n,),name='normal')
-    # p1 = mp.Process(target=job,args=(train_normal,q_a,))
-    # print('start:{}'.format(train_normal[60:]))
-    #
-    # # t2 = td.Thread(target=job,args=(train_anormal,q_a,),name='anormal')
-    # p2 = mp.Process(target=job,args=(train_anormal,q_n,))
-    # print('start:{}'.format(train_anormal[60:]))
-    #
-    # p1.start()
-    # p2.start()
-    # p1.join()
-    # p2.join()
-    # print("back\n")
-    # anormal_data = q_a.get()
-    # print("back\n")
-    # normal_data = q_n.get()
     print('anormal_data :ndim:{} dtype:{} shape:{}'.format(normal_data.ndim,normal_data.dtype,normal_data.shape))
 
     print('finished:{}'.format(normal[60:]))
@@ -155,6 +130,8 @@ def get_data(keyword='test'):#train_normal,train_anormal,,num=64*10000
     data = np.concatenate((normal_data,anormal_data),axis=0)
     data = np.reshape(data,(-1,64,22))
     print('data :ndim:{} dtype:{} shape:{}'.format(data.ndim, data.dtype, data.shape))
+    print('done read files!!!\n')
     return num_nor,num_anor,data.astype(np.float32)
 
-get_data()
+
+# get_data()
