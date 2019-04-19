@@ -65,6 +65,12 @@ def test(path, filename,logmark,num, flags, test):
     NP = 0
     NN = 0
     # print(type(Results.tolist()))
+    """
+    Precision：P=TP/(TP+FP)
+    Recall：R=TP/(TP+FN)
+    F1-score：2/(1/P+1/R)
+    ROC/AUC：TPR=TP/(TP+FN), FPR=FP/(FP+TN)
+    """
     for flag, pre in list(zip(flags,Results.tolist())):
         # print(flag,pre)
         if flag:
@@ -95,16 +101,27 @@ def test(path, filename,logmark,num, flags, test):
         results['accurate'] = accurate
     except ZeroDivisionError:
         writelog('Error at get data,flags is None)',file)
+    res = []
+
+    """csv header 'PT','NT','accurate'"""
+    for key in ['PT','NT','accurate']:
+        try:
+            res.append(results[key])
+        except KeyError:
+            res.append(0)
+
     # print(PT,NT,accurate)
     t2 = time.time()
-    writelog('time test spent :'.format(t2 - t1),file)
+    writelog('time test spent :{}'.format(t2 - t1),file)
     # print("crect number: {},total Accuracy rate:{}".format(crect, crect / (num + flags)))
     writelog('test case: {} had finshed module:{}'.format(filename,logmark),file)
+
     text = ' '
     for key, item in results.items():
         text += key + ':' + str(item) + ' '
     writelog(text,file)
     writelog('*'*40,file)
+    return res
     # print('false detected rate respectively,normal:{},anomaly:{}'.format(failure_rate / num, false_positive / flags))
 
 
@@ -138,28 +155,65 @@ def getModulesList(modules_path):
         modules_url.append(os.path.join(modules_path,final_module))
     sort_seq = list(map(lambda x: str(x),sort_seq))
     # print(sort_seq,type(sort_seq))
-    sort_seq.append('D')
+    if flagOfD:
+        sort_seq.append('D')
     # print(sort_seq)
     return modules_url, sort_seq
 
 
 def multitest(path):
 
-    # module_path = '/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/full/2019-04-17/GANmodule/D/'
+    # module_path = '/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/full/2019-04-19/GANmodule/D'
     module_path = '/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/Dmodule/2019-04-18/module/'
 
     test_path = path
     module_urls, seqs = getModulesList(module_path)
     # print(module_urls)
     test_file_name = os.path.basename(test_path)
+    file = os.path.splitext(test_file_name)[0]
     print('current at ',test_file_name)
     # exit()
     t_num, t_flag, tests = testdata(test_path,mark='test')  # ,num=64*rows test_normal,test_anormal
+    # ress = np.empty((1,3))
+    ress = []
+    # count = 0
     for i, url in list(zip(seqs,module_urls)):
-        test(url,test_file_name,i,t_num, t_flag, tests)
+        # test(url, test_file_name, i, t_num, t_flag, tests)
+        tes = test(url, test_file_name, i, t_num, t_flag, tests)
+        ress.append(tes)
+        # if count == 0:
+        #     ress = np.array(tes).reshape((-1,3)).astype(np.str)
+        #     count += 1
+        # else:
+        #     try:
+        #         ress = np.concatenate((ress, np.array(tes).reshape((-1,3)).astype(np.str)),axis=0)
+        #     except ValueError:
+        #         # print(ress.shape,tes)
+        #         print('--------------', ress.shape, len(seqs), '--------------------------')
+
+    ress = np.array(ress).reshape((-1,3))
+    # print('--------------', ress.shape, '--------------------------')
+
+    try:
+        ress = np.concatenate((np.array(seqs).reshape((-1,1)).astype(np.str),ress),axis=1)
+    except ValueError:
+        print('--------------',ress.shape, len(seqs),'--------------------------')
+
+    # exit()
+
+    # os.chdir('/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/Dmodule/2019-04-18/')
+    # os.chdir('/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/full/2019-04-19')
+    if not os.path.exists('./test_logs'):
+        os.makedirs('./test_logs')
+    csv_url = os.path.join('./test_logs',file+'_test_logs.csv')
+    # print(csv_url)
+    np.savetxt(csv_url,ress,fmt='%s',delimiter=',',encoding='utf-8')
 
 
 if __name__ == '__main__':
+    """
+    需要改变os.chdir参数、模型地址 module_path，测试地址test_addr
+    """
     """test GAN"""
     # module_path = '/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/full/2019-04-17/GANmodule/D/'
     # test_addr = "/home/gjj/PycharmProjects/ADA/netsData/hackingData/new_data/"
@@ -182,8 +236,10 @@ if __name__ == '__main__':
 
 
     """test Disciminor"""
-    module_path = '/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/Dmodule/2019-04-18/module/'
+    # module_path = '/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/Dmodule/2019-04-18/module/'
+    # test_addr = "/home/gjj/PycharmProjects/ADA/netsData/hackingData/new_data/"
     test_addr = "/home/gjj/PycharmProjects/ADA/netsData/hackingData/new_data/"
+
 
     # module_urls, seqs = getModulesList(module_path)
     # t_nors, t_anors, tests = get_data(keyword='test')  # ,num=64*rows test_normal,test_anormal
@@ -192,6 +248,7 @@ if __name__ == '__main__':
     # print(test_urls)
     # exit()
     os.chdir('/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/Dmodule/2019-04-18/')
+    # os.chdir('/home/gjj/PycharmProjects/ADA/TorchGAN-your-mind/Nets/full/2019-04-19')
     # print(test_urls)
     # exit()
     # t_num, t_flag, tests = testdata(test_urls[0])  # ,num=64*rows test_normal,test_anormal
